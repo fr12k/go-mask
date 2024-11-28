@@ -1,0 +1,3 @@
+args: -cover
+command: test
+directory: .go-mask
