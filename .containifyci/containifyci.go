@@ -25,6 +25,7 @@ func main() {
 	opts2.Properties = map[string]*build.ListValue{
 		"tags":       build.NewList("testrunmain"),
 		"nocoverage": build.NewList("true"),
+		"goreleaser": build.NewList("true"),
 	}
 	build.Serve(opts, opts2)
 }
