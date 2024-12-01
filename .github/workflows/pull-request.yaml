@@ -6,7 +6,7 @@ on:
       - main
 
 concurrency:
-  group: multilanguage_sdk_service_${{ github.ref }}
+  group: go_mask_${{ github.ref }}
   cancel-in-progress: true
 
 permissions:

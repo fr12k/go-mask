@@ -1,6 +1,7 @@
 name: Release
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -20,3 +21,27 @@ jobs:
   build-go-mask:
     uses: ./.github/workflows/containifyci.yaml
     secrets: inherit
+  release-go-mask:
+    runs-on: ubuntu-latest
+    needs: build-go-mask
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      - name: Get Next Version
+        id: semver
+        uses: ietf-tools/semver-action@v1
+        with:
+          token: ${{ github.token }}
+          branch: main
+          noVersionBumpBehavior: silent
+          skipInvalidTags: true
+          maxTagsToFetch: 50
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        if: steps.semver.outputs.next
+        with:
+          allowUpdates: true
+          # draft: true
+          generateReleaseNotes: true
+          makeLatest: true
+          tag: ${{ steps.semver.outputs.next }}
