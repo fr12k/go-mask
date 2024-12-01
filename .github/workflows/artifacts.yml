@@ -15,6 +15,18 @@ on:
         required: true
         default: ""
         type: string
+    secrets:
+      MACOS_SIGN_PASSWORD:
+        required: true
+      MACOS_SIGN_P12:
+        required: true
+      MACOS_NOTARY_ISSUER_ID:
+        required: true
+      MACOS_NOTARY_KEY_ID:
+        required: true
+      MACOS_NOTARY_KEY:
+        required: true
+
 env:
   GOMODCACHE: /home/runner/go/pkg/mod
   GOCACHE: /home/runner/go/pkg/mod/build-cache
@@ -64,3 +76,9 @@ jobs:
       - name: Release
         run: |
           engine-ci engine -t release
+        env:
+          MACOS_SIGN_PASSWORD: ${{ secrets.MACOS_SIGN_PASSWORD }}
+          MACOS_SIGN_P12: ${{ secrets.MACOS_SIGN_P12 }}
+          MACOS_NOTARY_ISSUER_ID: ${{ secrets.MACOS_NOTARY_ISSUER_ID }}
+          MACOS_NOTARY_KEY_ID: ${{ secrets.MACOS_NOTARY_KEY_ID }}
+          MACOS_NOTARY_KEY: ${{ secrets.MACOS_NOTARY_KEY }}

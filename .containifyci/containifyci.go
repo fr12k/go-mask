@@ -23,9 +23,10 @@ func main() {
 	opts2.Image = ""
 	opts2.File = "main.go"
 	opts2.Properties = map[string]*build.ListValue{
-		"tags":       build.NewList("testrunmain"),
-		"nocoverage": build.NewList("true"),
-		"goreleaser": build.NewList("true"),
+		"tags":            build.NewList("testrunmain"),
+		"nocoverage":      build.NewList("true"),
+		"goreleaser":      build.NewList("true"),
+		"goreleaser_envs": build.NewList("MACOS_SIGN_PASSWORD", "MACOS_SIGN_P12", "MACOS_NOTARY_ISSUER_ID", "MACOS_NOTARY_KEY_ID", "MACOS_NOTARY_KEY"),
 	}
 	build.Serve(opts, opts2)
 }
