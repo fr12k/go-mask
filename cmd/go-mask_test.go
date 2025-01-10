@@ -53,23 +53,23 @@ func TestRun(t *testing.T) {
 		cfg           *config.Config
 		mockError     error
 		expectedError bool
-		debugMode     bool
 	}{
 		{
-			name:      "Run success with debug",
-			debugMode: true,
+			name: "Run success with debug",
+			cfg: &config.Config{
+				Command: "build",
+				Debug:   true,
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			yamlConfig := fmt.Sprintf(yamlConfig, tt.debugMode, t.TempDir())
-			cfgLoader := &config.ConfigLoader{
-				File: file.NewFileReader(strings.NewReader(yamlConfig)),
-			}
-			gomask := NewGoMask()
-			gomask.loader = cfgLoader
-			err := gomask.Run()
+			tt.cfg.Directory = t.TempDir()
+			gomask := NewGoMask(WithConfig(
+				tt.cfg,
+			))
+			_, err := gomask.Run()
 			assert.NoError(t, err)
 		})
 	}
@@ -80,8 +80,22 @@ func TestRunErrorLoadConfig(t *testing.T) {
 		File: file.NewFileReaderError(os.ErrClosed),
 	}
 	gomask := GoMask{cfgLoader, nil, nil, nil}
-	err := gomask.Run()
+	_, err := gomask.Run()
 	assert.Error(t, err)
+}
+
+func TestRunWithCommandError(t *testing.T) {
+	os.Args = []string{"go-mask"}
+	gomask := NewGoMask(WithConfig(
+		&config.Config{
+			Command:  "test",
+			Directory: t.TempDir(),
+			Code: 	 "fmt.Println(\"Hello World\")",
+		},
+	))
+	gomask.command = NewMockCommandWithError(assert.AnError)
+	_, err := gomask.Run()
+	assert.ErrorIs(t, err, assert.AnError)
 }
 
 type errorReader struct {
@@ -122,7 +136,7 @@ func TestRunErrorReadCode(t *testing.T) {
 				nil,
 				nil,
 			}
-			err := gomask.Run()
+			_, err := gomask.Run()
 			assert.Error(t, err)
 		})
 	}
@@ -143,11 +157,11 @@ func TestRunWriteCode(t *testing.T) {
 			return code.NewCodeReader(strings.NewReader("fmt.Println(\"Hello World\")"))
 		},
 		writer: func(cfg *config.Config) *file.File {
-			return file.NewFileWriterBuffer(&buf, filepath.Join(t.TempDir(), cfg.Command.FileName()))
+			return file.NewFileWriterBuffer(&buf, filepath.Join(t.TempDir(), cfg.SaveAs()))
 		},
 		command: NewMockCommand(),
 	}
-	err := gomask.Run()
+	_, err := gomask.Run()
 	assert.NoError(t, err)
 	assert.Equal(t, "package main\n\nimport \"fmt\"\nimport \"os\"\n\nfunc main() {\nfmt.Println(\"Hello World\")\n}\n", buf.String())
 }
@@ -170,16 +184,30 @@ func TestRunWriteCodeError(t *testing.T) {
 		},
 		nil,
 	}
-	err := gomask.Run()
+	_, err := gomask.Run()
 	assert.Error(t, err)
 	assert.Equal(t, os.ErrClosed, err)
 }
+
+//test utilities
 
 func NewMockCommand() *cmd.Command {
 	return &cmd.Command{
 		CommandInterface: MockCommand{
 			command: func(name string, arg ...string) *exec.Cmd {
 				return exec.Command("echo")
+			},
+		},
+	}
+}
+
+func NewMockCommandWithError(err error) *cmd.Command {
+	return &cmd.Command{
+		CommandInterface: MockCommand{
+			command: func(name string, arg ...string) *exec.Cmd {
+				cmd := exec.Command("echo")
+				cmd.Err = err
+				return cmd
 			},
 		},
 	}

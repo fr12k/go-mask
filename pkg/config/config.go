@@ -23,6 +23,7 @@ type (
 	Config struct {
 		Args      string      `yaml:"args"`
 		Command   Command     `yaml:"command"`
+		FileName  string      `yaml:"filename"`
 		Debug     bool        `yaml:"debug"`
 		Directory string      `yaml:"directory"`
 		Imports   stringArray `yaml:"imports"`
@@ -48,17 +49,23 @@ func (c *Command) Name() string {
 	return string(*c)
 }
 
-func (c *Command) FileName() string {
-	var filename string
-	switch *c {
-	case "test":
-		filename = "go-mask_test.go"
-	case "build", "run":
-		filename = "go-mask.go"
-	default:
-		filename = "go-mask.go"
+func (c *Config) SaveAs() string {
+	if c.FileName != "" {
+		return c.FileName
 	}
-	return filename
+	switch c.Command {
+	case "test":
+		c.FileName = "go-mask_test.go"
+	case "build", "run":
+		c.FileName = "go-mask.go"
+	default:
+		c.FileName = "go-mask.go"
+	}
+	return c.FileName
+}
+
+func NewConfigLoaderBuffer(content string) *ConfigLoader {
+	return &ConfigLoader{file.NewFileReader(strings.NewReader(content))}
 }
 
 func NewConfigLoader(filename string) *ConfigLoader {

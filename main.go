@@ -8,7 +8,9 @@ import (
 )
 
 func main() {
-	err := cmd.NewGoMask().Run()
+	res, err := cmd.NewGoMask().Run()
+	fmt.Print(res.Stdout)
+	fmt.Print(res.Stderr)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)

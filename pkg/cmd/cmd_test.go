@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -34,7 +35,6 @@ func TestExecuteCommand(t *testing.T) {
 			},
 			tmpfile:       "testfile.go",
 			expectedError: false,
-			mockError:     nil,
 		},
 		{
 			name: "ExecuteCommand_Build",
@@ -45,7 +45,6 @@ func TestExecuteCommand(t *testing.T) {
 			},
 			tmpfile:       "testfile.go",
 			expectedError: false,
-			mockError:     nil,
 		},
 		{
 			name: "ExecuteCommand_Run",
@@ -55,7 +54,6 @@ func TestExecuteCommand(t *testing.T) {
 			},
 			tmpfile:       "testfile.go",
 			expectedError: false,
-			mockError:     nil,
 		},
 		{
 			name: "ExecuteCommand_Error",
@@ -66,7 +64,17 @@ func TestExecuteCommand(t *testing.T) {
 			},
 			tmpfile:       "testfile.go",
 			expectedError: true,
-			mockError:     fmt.Errorf("command failed"),
+			// mockError:     fmt.Errorf("command failed"),
+		},
+		{
+			name: "ExecuteCommand_Error",
+			cfg: &config.Config{
+				Command: "test",
+				Args:    "arg1 arg2",
+				Output:  "outputfile",
+			},
+			tmpfile:       "invalidDir/testfile.go",
+			expectedError: true,
 		},
 	}
 
@@ -75,7 +83,7 @@ func TestExecuteCommand(t *testing.T) {
 			execCommand := func(name string, args ...string) *exec.Cmd {
 				assert.Equal(t, "sh", name)
 				if tt.cfg.Command == "test" {
-					assert.Equal(t, "-c go test arg1 arg2 testfile.go", strings.Join(args, " "))
+					assert.Equal(t, "-c go test arg1 arg2 testfile.go cmd.go", strings.Join(args, " "))
 				}
 				if tt.cfg.Command == "build" {
 					assert.Equal(t, "-c go build arg1 arg2 -o outputfile testfile.go", strings.Join(args, " "))
@@ -94,7 +102,7 @@ func TestExecuteCommand(t *testing.T) {
 					command: execCommand,
 				},
 			}
-			err := cmd.ExecuteCommand(tt.cfg, tt.tmpfile)
+			_, err := cmd.ExecuteCommand(tt.cfg, tt.tmpfile)
 
 			// Assert if the error matches the expectation
 			if tt.expectedError {
@@ -106,6 +114,78 @@ func TestExecuteCommand(t *testing.T) {
 	}
 }
 
+func TestListFilesWithSuffix(t *testing.T) {
+	tests := []struct {
+		name           string
+		suffix         string
+		excludeSuffix  string
+		expectedFiles  []string
+		setup          func(t *testing.T) (string, func())
+		expectedErrMsg string
+	}{
+		{
+			name:          "No matching files",
+			suffix:        ".txt",
+			excludeSuffix: ".log",
+			expectedFiles: []string{},
+			setup: func(t *testing.T) (string, func()) {
+				tempDir := t.TempDir()
+				return tempDir, func() { os.RemoveAll(tempDir) }
+			},
+		},
+		{
+			name:          "Matching files found",
+			suffix:        ".txt",
+			excludeSuffix: ".log",
+			expectedFiles: []string{"file1.txt", "file2.txt"},
+			setup: func(t *testing.T) (string, func()) {
+				// Create a temporary directory with files
+				tempDir := t.TempDir()
+				_ = os.WriteFile(filepath.Join(tempDir, "file1.txt"), []byte("content"), 0644)
+				_ = os.WriteFile(filepath.Join(tempDir, "file2.txt"), []byte("content"), 0644)
+				_ = os.WriteFile(filepath.Join(tempDir, "file3.log"), []byte("content"), 0644)
+				return tempDir, func() { os.RemoveAll(tempDir) }
+			},
+		},
+		{
+			name:          "Error during filepath.Walk",
+			suffix:        ".txt",
+			excludeSuffix: ".log",
+			expectedFiles: nil,
+			setup: func(t *testing.T) (string, func()) {
+				return "invalidDir", func() {}
+			},
+			expectedErrMsg: "no such file or directory",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			// Set up temporary test data
+			dir, cleanup := tc.setup(t)
+			defer cleanup()
+
+			// Call the function
+			files, err := listFilesWithSuffix(dir, tc.suffix, tc.excludeSuffix)
+
+			_files := []string{}
+			for _, file := range files {
+				_files = append(_files, filepath.Base(file))
+			}
+			// Verify the results
+			assert.ElementsMatch(t, tc.expectedFiles, _files)
+			if tc.expectedErrMsg != "" {
+				assert.ErrorContains(t, err, tc.expectedErrMsg)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+
+//test utility
+
 type MockCommand struct {
 	command func(name string, arg ...string) *exec.Cmd
 }
@@ -113,4 +193,3 @@ type MockCommand struct {
 func (m MockCommand) Command(name string, arg ...string) *exec.Cmd {
 	return m.command(name, arg...)
 }
-

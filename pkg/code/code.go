@@ -38,7 +38,6 @@ func (c *CodeReader) ReadCode() (string, error) {
 	}
 
 	c.code = strings.NewReader(str)
-	fmt.Printf("Code: %s\n", str)
 	return str, nil
 }
 

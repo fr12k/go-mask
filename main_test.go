@@ -74,7 +74,7 @@ func TestCallMain(t *testing.T) {
 	cmd.Stderr = &buf
 	err := cmd.Run()
 	assert.NoError(t, err)
-	assert.Equal(t, "Code: fmt.Println(\"Hello, World!\")\nfmt.Println(\"Hello, World!\")\n\n", buf.String())
+	assert.Equal(t, "fmt.Println(\"Hello, World!\")\n", buf.String())
 }
 
 func TestCallMainError(t *testing.T) {
@@ -85,5 +85,5 @@ func TestCallMainError(t *testing.T) {
 	cmd.Stderr = &buf
 	err := cmd.Run()
 	assert.Error(t, err)
-	assert.Equal(t, "Code: fmt.Println(\"Hello, World!\")\n.go-mask/go-mask_test.go:1:1: expected 'package', found fmt\nError executing command: exit status 1\nexit status 1\n", buf.String())
+	assert.Equal(t, "Error executing command: exit status 1\n.go-mask/go-mask_test.go:1:1: expected 'package', found fmt\nexit status 1\n", buf.String())
 }

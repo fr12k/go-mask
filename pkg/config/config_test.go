@@ -17,28 +17,33 @@ func TestName(t *testing.T) {
 
 func TestFileName(t *testing.T) {
 	test := []struct {
-		Command  Command
+		Config   Config
 		FileName string
-	}{{
-		Command("test"),
-		"go-mask_test.go",
-	},
+	}{
 		{
-			Command("build"),
+			Config{Command: "test", FileName: "test.go"},
+			"test.go",
+		},
+		{
+			Config{Command: "test"},
+			"go-mask_test.go",
+		},
+		{
+			Config{Command: "build"},
 			"go-mask.go",
 		},
 		{
-			Command("run"),
+			Config{Command: "run"},
 			"go-mask.go",
 		},
 		{
-			Command("invalid"),
+			Config{Command: "invalid"},
 			"go-mask.go",
 		},
 	}
 	for _, tt := range test {
-		t.Run(string(tt.Command), func(t *testing.T) {
-			assert.Equal(t, tt.FileName, tt.Command.FileName(), "Expected filename to be 'go-mask.go'")
+		t.Run(string(tt.Config.Command), func(t *testing.T) {
+			assert.Equal(t, tt.FileName, tt.Config.SaveAs(), "Expected filename to be 'go-mask.go'")
 		})
 	}
 }
@@ -174,4 +179,47 @@ func TestStringArray(t *testing.T) {
 	sa = stringArray{}
 	_ = sa.Set("d,e,f")
 	assert.Equal(t, stringArray{"d", "e", "f"}, sa, "Expected string array to be 'd,e,f'")
+}
+
+func TestNewConfigLoaderBuffer(t *testing.T) {
+	tests := []struct {
+		name string
+		data string
+		config Config
+	}{
+		{
+			name: "EmptyConfig",
+			data: "",
+			config: Config{},
+		},
+		{
+			name: "ValidConfig",
+			data: `
+command: "run"
+directory: "./tmp"
+args: "-v"
+debug: true
+package: "main"
+mainfunc: true
+output: "out.go"`,
+			config: Config{
+				Command: "run",
+				Directory: "./tmp",
+				Args: "-v",
+				Debug: true,
+				Package: "main",
+				MainFunc: true,
+				Output: "out.go",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			loader := NewConfigLoaderBuffer(tt.data)
+			cfg, err := loader.LoadConfig()
+			assert.NoError(t, err, "Failed to load config")
+			assert.Equal(t, tt.config, *cfg, "Expected config to match")
+		})
+	}
 }

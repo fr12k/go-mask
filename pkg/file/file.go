@@ -24,14 +24,18 @@ type File struct {
 	writer func() func() (*FileWriter, error)
 }
 
-func NewFile(filePath string) *File {
-	load := func() (io.Reader, error) {
+func readerFunc(filePath string) func() (io.Reader, error) {
+	return func() (io.Reader, error) {
 		file, err := os.Open(filePath)
 		return file, err
 	}
+}
+
+func NewFile(filePath string) *File {
 	return &File{
 		FilePath: filePath,
-		reader:   sync.OnceValues(load),
+		reader:   sync.OnceValues(readerFunc(filePath)),
+		writer:   sync.OnceValue(writerFunc(filePath)),
 	}
 }
 
@@ -53,9 +57,8 @@ func NewFileReaderError(err error) *File {
 	}
 }
 
-// NewFileWriter creates a new FileWriter instance, ensuring the directory exists.
-func NewFileWriter(filePath string) *File {
-	writer := func() func() (*FileWriter, error) {
+func writerFunc(filePath string) func() func() (*FileWriter, error) {
+	return func() func() (*FileWriter, error) {
 		// Ensure the directory exists
 		dir := filepath.Dir(filePath)
 		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
@@ -72,7 +75,10 @@ func NewFileWriter(filePath string) *File {
 			return &FileWriter{Directory: dir, FileName: fileName, FilePath: filePath, Writer: file}, nil
 		}
 	}
-	return &File{writer: sync.OnceValue(writer)}
+}
+
+func NewFileWriter(filePath string) *File {
+	return &File{writer: sync.OnceValue(writerFunc(filePath))}
 }
 
 func NewFileWriterBuffer(w io.Writer, filePath string) *File {
@@ -100,6 +106,7 @@ func (f *File) Exists() (bool, error) {
 		reader, err := f.reader()
 		if err != nil {
 			if os.IsNotExist(err) {
+				f.reader = sync.OnceValues(readerFunc(f.FilePath))
 				return false, nil
 			}
 			return false, err
