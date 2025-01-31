@@ -15,4 +15,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Run golangci-lint
-      uses: containifyci/.github/.github/github-actions/golangci-lint@v1
+      uses: containifyci/.github/github-actions/golangci-lint@v1
