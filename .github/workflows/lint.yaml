@@ -16,7 +16,18 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+    - name: Debug
+      run: |
+        go env
+        ls -lha ${GOPATH}/bin
     - name: Run golangci-lint
       uses: containifyci/.github/github-actions/golangci-lint@v1
-      # with:
-      #   working-directory: ""
+      continue-on-error: true
+    - name: Debug
+      run: |
+        go env
+        ls -lha ${GOPATH}/bin
+    # - name: Run golangci-lint
+    #   uses: containifyci/.github/github-actions/golangci-lint@v1
+    #   with:
+    #     working-directory: ".containifyci"
