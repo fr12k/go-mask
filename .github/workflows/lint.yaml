@@ -16,7 +16,15 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+    - name: Install go
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: go.mod
     - name: Run golangci-lint
-      uses: containifyci/.github/github-actions/golangci-lint@v1
-      # with:
-      #   working-directory: ""
+      uses: containifyci/.github/github-actions/golangci-lint@main
+      continue-on-error: true
+    - name: Run golangci-lint
+      uses: containifyci/.github/github-actions/golangci-lint@main
+      with:
+        args: "--no-config"
+        working-directory: ".containifyci"

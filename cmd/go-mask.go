@@ -57,11 +57,11 @@ func NewGoMask(opts ...Option) *GoMask {
 	return goMask
 }
 
-func (g *GoMask) Run() (*Result, error) {
+func (g *GoMask) Run() (Result, error) {
 	cfg, err := g.loader.LoadConfig()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
-		return nil, err
+		return Result{}, err
 	}
 
 	// Parse flags from config
@@ -74,12 +74,12 @@ func (g *GoMask) Run() (*Result, error) {
 	generatedCode, err := reader.GenerateGoCode(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error generating Go code: %v\n", err)
-		return nil, err
+		return Result{}, err
 	}
 
 	// Debug mode: print generated code
 	if cfg.Debug {
-		return &Result{
+		return Result{
 			Stdout: generatedCode,
 		}, nil
 	}
@@ -90,7 +90,7 @@ func (g *GoMask) Run() (*Result, error) {
 	_, err = writer.Write([]byte(generatedCode))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error writing to file: %v\n", err)
-		return nil, err
+		return Result{}, err
 	}
 
 	// Run the build/run/test command
@@ -101,8 +101,11 @@ func (g *GoMask) Run() (*Result, error) {
 	return toResult(res), nil
 }
 
-func toResult(res *cmd.CommandResult) *Result {
-	return &Result{
+func toResult(res *cmd.CommandResult) Result {
+	if res == nil {
+		return Result{}
+	}
+	return Result{
 		Stdout: res.Stdout,
 		Stderr: res.Stderr,
 	}

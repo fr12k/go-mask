@@ -1,6 +1,7 @@
 package file
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -133,6 +134,9 @@ func (f *File) Write(p []byte) (n int, err error) {
 		fw, err := f.writer()()
 		if err != nil {
 			return 0, err
+		}
+		if fw == nil {
+			return -1, errors.New("unexpected FileWriter is nil")
 		}
 		f.Writer = fw
 		return fw.Write(p)

@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // TestReadFileSuccess verifies that the file content is correctly read when the file exists.
@@ -18,12 +19,12 @@ func TestReadFileSuccess(t *testing.T) {
 
 	// Read the file content
 	content, err := file.Read()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "Hello, World!", string(content))
 
 	// Close the file
 	err = file.Close()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 // TestReadFileNotExist verifies that an error is returned when the file does not exist.
@@ -36,7 +37,7 @@ func TestReadFileNotExist(t *testing.T) {
 	assert.Error(t, err)
 	assert.True(t, os.IsNotExist(err))
 	err = file.Close()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 // TestLazyLoadErrorOnLoad simulates an error during the lazy load process.
@@ -51,7 +52,7 @@ func TestLazyLoadErrorOnLoad(t *testing.T) {
 
 	// Attempt to read, expecting an error
 	_, err := file.Read()
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Equal(t, io.EOF, err)
 }
 
@@ -66,7 +67,7 @@ func TestCustomReader(t *testing.T) {
 	}
 
 	content, err := file.Read()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "Mock Data", string(content))
 }
 
@@ -78,7 +79,7 @@ func TestFileExist(t *testing.T) {
 
 	// Try to read the file
 	exists, err := file.Exists()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, exists)
 }
 
@@ -88,7 +89,7 @@ func TestFileExistFalse(t *testing.T) {
 
 	// Try to read the file
 	exists, err := file.Exists()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.False(t, exists)
 }
 
@@ -127,28 +128,28 @@ func TestNewFileWriter(t *testing.T) {
 		defer os.RemoveAll(baseDir)
 		file := NewFileWriter(testFilePath)
 		writer, err := file.writer()()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.Equal(t, filepath.Dir(testFilePath), writer.Directory)
 		assert.Equal(t, filepath.Base(testFilePath), writer.FileName)
 
 		_, err = file.Write([]byte("Hello, World!"))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		_, err = file.Write([]byte("Hello, World!"))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Verify the directory was created
 		_, err = os.Stat(writer.Directory)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Verify the file was created
 		_, err = os.Stat(filepath.Join(writer.Directory, writer.FileName))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Test Close
 		err = file.Close()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 
 	t.Run("CreatesFileWriterWhenDirectoryExists", func(t *testing.T) {
@@ -156,18 +157,18 @@ func TestNewFileWriter(t *testing.T) {
 		defer os.RemoveAll(baseDir)
 		// Ensure the directory exists
 		err := os.MkdirAll(filepath.Dir(testFilePath), os.ModePerm)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		file := NewFileWriter(testFilePath)
 		writer, err := file.writer()()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.Equal(t, filepath.Dir(testFilePath), writer.Directory)
 		assert.Equal(t, filepath.Base(testFilePath), writer.FileName)
 
 		// Verify the file was created
 		_, err = os.Stat(filepath.Join(writer.Directory, writer.FileName))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 
 	t.Run("FailsToCreateDirectory", func(t *testing.T) {
@@ -175,10 +176,10 @@ func TestNewFileWriter(t *testing.T) {
 		defer os.RemoveAll(baseDir)
 		// Create a file at the directory path to cause MkdirAll to fail
 		err := os.MkdirAll(baseDir, os.ModePerm)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		dir := filepath.Join(baseDir, "logs")
 		err = os.WriteFile(dir, []byte{}, os.ModePerm) // Create a file where the directory should be
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		defer os.Remove(dir)
 
 		file := NewFileWriter(dir + "/")
@@ -189,23 +190,23 @@ func TestNewFileWriter(t *testing.T) {
 
 	t.Run("FailsToCreateFile", func(t *testing.T) {
 		// Create a temporary directory
-    baseDir, err := os.MkdirTemp("", "readonly-test")
-    assert.NoError(t, err)
-    defer os.RemoveAll(baseDir)
+		baseDir, err := os.MkdirTemp("", "readonly-test")
+		assert.NoError(t, err)
+		defer os.RemoveAll(baseDir)
 
-    testFilePath := filepath.Join(baseDir, "output.log")
+		testFilePath := filepath.Join(baseDir, "output.log")
 
-    file := NewFileWriter(testFilePath)
-    fnc := file.writer()
+		file := NewFileWriter(testFilePath)
+		fnc := file.writer()
 
 		os.RemoveAll(baseDir)
 		_, err = fnc()
-    assert.Error(t, err)
-    assert.Contains(t, err.Error(), "failed to create file")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to create file")
 
-    _, err = file.Write([]byte("Hello, World!"))
-    assert.Error(t, err)
-    assert.Contains(t, err.Error(), "failed to create file")
+		_, err = file.Write([]byte("Hello, World!"))
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to create file")
 	})
 }
 
@@ -219,7 +220,8 @@ func TestNewFileWriterBuffer(t *testing.T) {
 	var buf bytes.Buffer
 	file := NewFileWriterBuffer(&buf, testFilePath)
 	writer, err := file.writer()()
-	assert.NoError(t, err)
+	require.NotNil(t, writer)
+	require.NoError(t, err)
 
 	assert.Equal(t, filepath.Dir(testFilePath), writer.Directory)
 	assert.Equal(t, filepath.Base(testFilePath), writer.FileName)
@@ -248,12 +250,12 @@ func NewMockReader(data string) *MockReader {
 func createFile(t *testing.T, cnt string) (string, func()) {
 	// Create a temporary file with test content
 	tmpFile, err := os.CreateTemp("", "testfile")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, err = tmpFile.WriteString(cnt)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	assert.NoError(t, tmpFile.Close())
+	require.NoError(t, tmpFile.Close())
 	return tmpFile.Name(), func() {
 		os.Remove(tmpFile.Name())
 	}
