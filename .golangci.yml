@@ -1,10 +1,101 @@
 linters:
+  disable-all: true
+  fast: false
   enable:
-  - nilaway
+    - asasalint
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - contextcheck
+    - durationcheck
+    - errcheck
+    - errname
+    - errorlint
+    - gocritic
+    - godot
+    - gofmt
+    - gofumpt
+    - goimports
+    - gomoddirectives
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - misspell
+    - nakedret
+    - nilaway
+    - nilerr
+    - nilnil
+    - noctx
+    - nolintlint
+    - prealloc
+    - predeclared
+    - promlinter
+    - reassign
+    - revive
+    - rowserrcheck
+    - sqlclosecheck
+    - staticcheck
+    - stylecheck
+    - tagliatelle
+    - tenv
+    - testableexamples
+    - thelper
+    - tparallel
+    - unconvert
+    - unparam
+    - unused
+    - usestdlibvars
+    - wastedassign
+
 linters-settings:
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+    disabled-checks:
+      - hugeParam
+      - rangeExprCopy
+      - rangeValCopy
+
+  errcheck:
+    # Report `a := b.(MyStruct)` when `a, ok := ...` should be.
+    check-type-assertions: true # Default: false
+    # Report skipped checks:`num, _ := strconv.Atoi(numStr)`.
+    check-blank: true # Default: false
+    exclude-functions:
+      - io/ioutil.ReadFile
+      - io.Copy(*bytes.Buffer)
+      - io.Copy(os.Stdout)
+
+  govet:
+    disable:
+      # - fieldalignment # I'm ok to waste some bytes
+
+  nakedret:
+    # No naked returns, ever.
+    max-func-lines: 1 # Default: 30
+
+  tagliatelle:
+    case:
+      rules:
+        json: snake # why it's not a `snake` by default?!
+        yaml: snake # why it's not a `snake` by default?!
+        xml: camel
+        bson: camel
+        avro: snake
+        mapstructure: kebab
+
   custom:
     nilaway:
       type: "module"
       description: Static analysis tool to detect potential nil panics in Go code.
       settings:
         include-pkgs: ""
+
+output:
+  show-stats: true
+  sort-results: true

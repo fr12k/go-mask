@@ -1,9 +1,0 @@
-package main
-
-import (
-	"testing"
-)
-
-func TestConsumerPact(t *testing.T) {
-	t.Log("Hello World")
-}
