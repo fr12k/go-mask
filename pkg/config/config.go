@@ -16,7 +16,7 @@ type (
 
 	Command string
 
-	ConfigLoader struct {
+	Loader struct {
 		File *file.File
 	}
 
@@ -64,15 +64,15 @@ func (c *Config) SaveAs() string {
 	return c.FileName
 }
 
-func NewConfigLoaderBuffer(content string) *ConfigLoader {
-	return &ConfigLoader{file.NewFileReader(strings.NewReader(content))}
+func NewLoaderBuffer(content string) *Loader {
+	return &Loader{file.NewReader(strings.NewReader(content))}
 }
 
-func NewConfigLoader(filename string) *ConfigLoader {
-	return &ConfigLoader{file.NewFile(filename)}
+func NewLoader(filename string) *Loader {
+	return &Loader{file.NewFile(filename)}
 }
 
-func (c *ConfigLoader) LoadConfig() (*Config, error) {
+func (c *Loader) LoadConfig() (*Config, error) {
 	defer c.File.Close()
 	exist, err := c.File.Exists()
 	if err != nil {
@@ -96,18 +96,17 @@ func (c *ConfigLoader) LoadConfig() (*Config, error) {
 	return &config, nil
 }
 
-func ApplyFlags(cfg *Config) {
+func ApplyFlags(cfg *Config) error {
 	fs := flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
 	flag.CommandLine = fs
-	// flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	fs.Var(&cfg.Imports, "i", "Comma-separated list of strings")
 	fs.StringVar(&cfg.Args, "args", cfg.Args, "Arguments to pass to the go command")
-	fs.StringVar((*string)(&cfg.Command), "command", (string)(cfg.Command), "Command to run (build, run, test)")
+	fs.StringVar((*string)(&cfg.Command), "command", string(cfg.Command), "Command to run (build, run, test)")
 	fs.BoolVar(&cfg.Debug, "debug", cfg.Debug, "Enable debug mode")
 	fs.StringVar(&cfg.Directory, "directory", cfg.Directory, "Directory for temporary files")
 	fs.StringVar(&cfg.Package, "package", cfg.Package, "Go package name")
 	fs.BoolVar(&cfg.MainFunc, "mainfunc", cfg.MainFunc, "Wrap code in main function")
 	fs.StringVar(&cfg.Output, "output", cfg.Output, "Output file name for build command")
 	fs.StringVar(&cfg.Code, "c", cfg.Code, "Go code to run")
-	_ = fs.Parse(os.Args[1:])
+	return fs.Parse(os.Args[1:])
 }

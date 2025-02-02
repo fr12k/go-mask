@@ -68,7 +68,7 @@ func (c *Command) ExecuteCommand(cfg *config.Config, tmpfile string) (*CommandRe
 	cmdStr := strings.Join(args, " ")
 	cmd := c.Command("sh", "-c", cmdStr)
 
-	var stdout, stderr *bytes.Buffer = &bytes.Buffer{}, &bytes.Buffer{}
+	stdout, stderr := &bytes.Buffer{}, &bytes.Buffer{}
 
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr

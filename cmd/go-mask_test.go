@@ -75,9 +75,23 @@ func TestRun(t *testing.T) {
 	}
 }
 
+func TestToResult(t *testing.T) {
+	res := toResult(nil)
+	assert.Equal(t, Result{}, res)
+}
+
 func TestRunErrorLoadConfig(t *testing.T) {
-	cfgLoader := &config.ConfigLoader{
-		File: file.NewFileReaderError(os.ErrClosed),
+	os.Args = []string{"go-mask", "--invalid args"}
+	gomask := NewGoMask(WithConfig(
+		&config.Config{},
+	))
+	_, err := gomask.Run()
+	assert.Error(t, err)
+}
+
+func TestRunErrorApplyFlags(t *testing.T) {
+	cfgLoader := &config.Loader{
+		File: file.NewReaderError(os.ErrClosed),
 	}
 	gomask := GoMask{cfgLoader, nil, nil, nil}
 	_, err := gomask.Run()
@@ -88,27 +102,14 @@ func TestRunWithCommandError(t *testing.T) {
 	os.Args = []string{"go-mask"}
 	gomask := NewGoMask(WithConfig(
 		&config.Config{
-			Command:  "test",
+			Command:   "test",
 			Directory: t.TempDir(),
-			Code: 	 "fmt.Println(\"Hello World\")",
+			Code:      "fmt.Println(\"Hello World\")",
 		},
 	))
 	gomask.command = NewMockCommandWithError(assert.AnError)
 	_, err := gomask.Run()
 	assert.ErrorIs(t, err, assert.AnError)
-}
-
-type errorReader struct {
-	limit int
-	count int
-}
-
-func (e *errorReader) Read(p []byte) (n int, err error) {
-	if e.count >= e.limit {
-		return 0, os.ErrClosed
-	}
-	e.count++
-	return copy(p, "fmt.Println(\"Hello World\")\n"), io.EOF
 }
 
 func TestRunErrorReadCode(t *testing.T) {
@@ -123,15 +124,14 @@ func TestRunErrorReadCode(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			yamlConfig := fmt.Sprintf(yamlConfig, false, t.TempDir())
-			cfgLoader := &config.ConfigLoader{
-				File: file.NewFileReader(strings.NewReader(yamlConfig)),
+			cfgLoader := &config.Loader{
+				File: file.NewReader(strings.NewReader(yamlConfig)),
 			}
 			gomask := GoMask{
 				cfgLoader,
-				func(cfg *config.Config) *code.CodeReader {
-					return code.NewCodeReader(&errorReader{limit: 0})
+				func(_ *config.Config) *code.Reader {
+					return code.NewReader(&errorReader{limit: 0})
 				},
 				nil,
 				nil,
@@ -146,18 +146,18 @@ func TestRunWriteCode(t *testing.T) {
 	os.Args = []string{"go-mask"}
 
 	yamlConfig := fmt.Sprintf(yamlConfig, false, t.TempDir())
-	cfgLoader := &config.ConfigLoader{
-		File: file.NewFileReader(strings.NewReader(yamlConfig)),
+	cfgLoader := &config.Loader{
+		File: file.NewReader(strings.NewReader(yamlConfig)),
 	}
 
 	var buf bytes.Buffer
 	gomask := GoMask{
 		loader: cfgLoader,
-		reader: func(cfg *config.Config) *code.CodeReader {
-			return code.NewCodeReader(strings.NewReader("fmt.Println(\"Hello World\")"))
+		reader: func(_ *config.Config) *code.Reader {
+			return code.NewReader(strings.NewReader("fmt.Println(\"Hello World\")"))
 		},
 		writer: func(cfg *config.Config) *file.File {
-			return file.NewFileWriterBuffer(&buf, filepath.Join(t.TempDir(), cfg.SaveAs()))
+			return file.NewWriterBuffer(&buf, filepath.Join(t.TempDir(), cfg.SaveAs()))
 		},
 		command: NewMockCommand(),
 	}
@@ -170,17 +170,17 @@ func TestRunWriteCodeError(t *testing.T) {
 	os.Args = []string{"go-mask"}
 
 	yamlConfig := fmt.Sprintf(yamlConfig, false, t.TempDir())
-	cfgLoader := &config.ConfigLoader{
-		File: file.NewFileReader(strings.NewReader(yamlConfig)),
+	cfgLoader := &config.Loader{
+		File: file.NewReader(strings.NewReader(yamlConfig)),
 	}
 
 	gomask := GoMask{
 		cfgLoader,
-		func(cfg *config.Config) *code.CodeReader {
-			return code.NewCodeReader(strings.NewReader("fmt.Println(\"Hello World\")"))
+		func(_ *config.Config) *code.Reader {
+			return code.NewReader(strings.NewReader("fmt.Println(\"Hello World\")"))
 		},
-		func(cfg *config.Config) *file.File {
-			return file.NewFileWriterError(os.ErrClosed)
+		func(_ *config.Config) *file.File {
+			return file.NewWriterError(os.ErrClosed)
 		},
 		nil,
 	}
@@ -189,12 +189,25 @@ func TestRunWriteCodeError(t *testing.T) {
 	assert.Equal(t, os.ErrClosed, err)
 }
 
-//test utilities
+// test utilities
+
+type errorReader struct {
+	limit int
+	count int
+}
+
+func (e *errorReader) Read(p []byte) (n int, err error) {
+	if e.count >= e.limit {
+		return 0, os.ErrClosed
+	}
+	e.count++
+	return copy(p, "fmt.Println(\"Hello World\")\n"), io.EOF
+}
 
 func NewMockCommand() *cmd.Command {
 	return &cmd.Command{
 		CommandInterface: MockCommand{
-			command: func(name string, arg ...string) *exec.Cmd {
+			command: func(_ string, _ ...string) *exec.Cmd {
 				return exec.Command("echo")
 			},
 		},
@@ -204,7 +217,7 @@ func NewMockCommand() *cmd.Command {
 func NewMockCommandWithError(err error) *cmd.Command {
 	return &cmd.Command{
 		CommandInterface: MockCommand{
-			command: func(name string, arg ...string) *exec.Cmd {
+			command: func(_ string, _ ...string) *exec.Cmd {
 				cmd := exec.Command("echo")
 				cmd.Err = err
 				return cmd

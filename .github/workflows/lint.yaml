@@ -1,7 +1,15 @@
-name: golangci-lint Test
+name: Run Linter
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '.github/**'
 
 concurrency:
   group: go_mask_lint_${{ github.ref }}
@@ -14,5 +22,17 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Install go
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: go.mod
     - name: Run golangci-lint
-      uses: containifyci/.github/github-actions/golangci-lint@v1
+      uses: containifyci/.github/github-actions/golangci-lint@main
+      continue-on-error: true
+    - name: Run golangci-lint
+      uses: containifyci/.github/github-actions/golangci-lint@main
+      with:
+        args: "--no-config"
+        working-directory: ".containifyci"

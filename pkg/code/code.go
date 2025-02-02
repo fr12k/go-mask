@@ -10,15 +10,15 @@ import (
 	"github.com/fr12k/go-mask/pkg/config"
 )
 
-type CodeReader struct {
+type Reader struct {
 	code io.Reader
 }
 
-func NewCodeReader(code io.Reader) *CodeReader {
-	return &CodeReader{code}
+func NewReader(code io.Reader) *Reader {
+	return &Reader{code}
 }
 
-func (c *CodeReader) ReadCode() (string, error) {
+func (c *Reader) ReadCode() (string, error) {
 	str, err := readAllCode(c.code)
 	if err != nil {
 		return "", err
@@ -41,7 +41,7 @@ func (c *CodeReader) ReadCode() (string, error) {
 	return str, nil
 }
 
-func (c *CodeReader) GenerateGoCode(cfg *config.Config) (string, error) {
+func (c *Reader) GenerateGoCode(cfg *config.Config) (string, error) {
 	code, err := c.ReadCode()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error reading code: %v\n", err)
@@ -53,7 +53,7 @@ func (c *CodeReader) GenerateGoCode(cfg *config.Config) (string, error) {
 	}
 
 	for _, pkg := range cfg.Imports {
-		out.WriteString(fmt.Sprintf("import \"%s\"\n", strings.TrimSpace(pkg)))
+		out.WriteString(fmt.Sprintf("import %q\n", strings.TrimSpace(pkg)))
 	}
 	if len(cfg.Imports) > 0 {
 		out.WriteString("\n")

@@ -8,12 +8,13 @@ import (
 
 	"github.com/fr12k/go-mask/pkg/config"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestReadCode_FlagCodeProvided(t *testing.T) {
 	// Simulate flag input
-	c :=  "package main\nfunc main() {}"
-	reader := NewCodeReader(strings.NewReader(c))
+	c := "package main\nfunc main() {}"
+	reader := NewReader(strings.NewReader(c))
 	code, err := reader.ReadCode()
 	assert.NoError(t, err, "No error should be returned when reading code from flag")
 	assert.Equal(t, "package main\nfunc main() {}", code, "Code should match the flag input")
@@ -24,15 +25,16 @@ func TestReadCode_ReadFromStdin(t *testing.T) {
 	mockInput := "package main\nfunc main() {}\n"
 	stdin := os.Stdin
 	defer func() { os.Stdin = stdin }()
-	r, w, _ := os.Pipe()
+	r, w, err := os.Pipe()
+	require.NoError(t, err)
 	os.Stdin = r
 
-	_, err := w.WriteString(mockInput)
+	_, err = w.WriteString(mockInput)
 	assert.NoError(t, err)
 	w.Close()
 
 	// Read from stdin
-	reader := NewCodeReader(nil)
+	reader := NewReader(nil)
 	code, err := reader.ReadCode()
 	assert.NoError(t, err, "No error should be returned when reading code from stdin")
 	assert.Equal(t, mockInput, code, "Code should match the stdin input")
@@ -42,12 +44,13 @@ func TestReadCode_ReadFromStdinWithError(t *testing.T) {
 	// Simulate an error in stdin
 	stdin := os.Stdin
 	defer func() { os.Stdin = stdin }()
-	r, _, _ := os.Pipe()
+	r, _, err := os.Pipe()
+	require.NoError(t, err)
 	os.Stdin = r
 	r.Close() // Immediately close the read pipe to cause an error
 
-	reader := NewCodeReader(nil)
-	_, err := reader.ReadCode()
+	reader := NewReader(nil)
+	_, err = reader.ReadCode()
 	assert.Error(t, err, "An error should be returned when reading from stdin")
 }
 
@@ -55,7 +58,7 @@ func TestGenerateGoCode(t *testing.T) {
 	tests := []struct {
 		name     string
 		cfg      *config.Config
-		code    string
+		code     string
 		expected string
 	}{
 		{
@@ -106,8 +109,9 @@ fmt.Println("Hello, World!")
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reader := NewCodeReader(strings.NewReader(tt.code))
-			output, _ := reader.GenerateGoCode(tt.cfg)
+			reader := NewReader(strings.NewReader(tt.code))
+			output, err := reader.GenerateGoCode(tt.cfg)
+			require.NoError(t, err)
 			assert.Equal(t, tt.expected, output, "Generated code should match the expected output")
 		})
 	}
@@ -115,7 +119,7 @@ fmt.Println("Hello, World!")
 
 func TestReadCodeErrorReadingCode(t *testing.T) {
 	// Simulate an error while reading code
-	reader := NewCodeReader(iotest.ErrReader(os.ErrClosed))
+	reader := NewReader(iotest.ErrReader(os.ErrClosed))
 	output, err := reader.ReadCode()
 	assert.Error(t, err, "An error should be returned when reading code")
 	assert.Empty(t, output, "Generated code should be empty when an error occurs")
@@ -123,7 +127,7 @@ func TestReadCodeErrorReadingCode(t *testing.T) {
 
 func TestGenerateGoCodeErrorReadingCode(t *testing.T) {
 	// Simulate an error while reading code
-	reader := NewCodeReader(iotest.ErrReader(os.ErrClosed))
+	reader := NewReader(iotest.ErrReader(os.ErrClosed))
 	output, err := reader.GenerateGoCode(&config.Config{})
 	assert.Error(t, err, "An error should be returned when reading code")
 	assert.Empty(t, output, "Generated code should be empty when an error occurs")

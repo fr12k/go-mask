@@ -1,4 +1,5 @@
 .go-mask/
 .coverdata/
+build/
 
 coverage.out

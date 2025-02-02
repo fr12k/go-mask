@@ -12,11 +12,14 @@ import (
 )
 
 func main() {
-	os.Chdir("../")
+	_ = os.Chdir("../")
 	opts := build.NewGoServiceBuild("go-mask")
 	opts.Verbose = false
 	opts.Image = ""
 	opts.File = "main.go"
+	opts.Properties = map[string]*build.ListValue{
+		"coverage_mode": build.NewList("binary"),
+	}
 
 	opts2 := build.NewGoServiceBuild("go-mask-main")
 	opts2.Verbose = false

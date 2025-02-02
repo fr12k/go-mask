@@ -8,6 +8,7 @@ import (
 
 	"github.com/fr12k/go-mask/pkg/file"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestName(t *testing.T) {
@@ -50,30 +51,29 @@ func TestFileName(t *testing.T) {
 
 func TestLoadConfigError(t *testing.T) {
 	t.Run("FileDoesNotExist", func(t *testing.T) {
-		loader := &ConfigLoader{file.NewFileReaderError(os.ErrNotExist)}
+		loader := &Loader{file.NewReaderError(os.ErrNotExist)}
 		cfg, err := loader.LoadConfig()
-		assert.NoError(t, err, "Failed to load config")
+		require.NoError(t, err, "Failed to load config")
 		assert.Equal(t, "run", string(cfg.Command), "Expected default command to be 'build'")
 		assert.Equal(t, ".", cfg.Directory, "Expected default directory to be '.'")
 	})
 
 	t.Run("FileExistButIsNotAccessabile", func(t *testing.T) {
-		loader := &ConfigLoader{file.NewFileReaderError(os.ErrPermission)}
+		loader := &Loader{file.NewReaderError(os.ErrPermission)}
 		_, err := loader.LoadConfig()
 		assert.Error(t, err, "Failed to load config")
 	})
 
 	t.Run("ErrorReadingFile", func(t *testing.T) {
-		loader := &ConfigLoader{file.NewFileReader(iotest.ErrReader(os.ErrPermission))}
+		loader := &Loader{file.NewReader(iotest.ErrReader(os.ErrPermission))}
 		_, err := loader.LoadConfig()
 		assert.Error(t, err, "Expected an error when reading file")
 	})
 
 	t.Run("ErrorUnmarshallingYAML", func(t *testing.T) {
-		loader := &ConfigLoader{file.NewFileReader(strings.NewReader("invalid_yaml: : :"))}
+		loader := &Loader{file.NewReader(strings.NewReader("invalid_yaml: : :"))}
 		_, err := loader.LoadConfig()
 		assert.Error(t, err, "Expected an error when unmarshalling YAML")
-		// assert.True(t, exitCalled, "os.Exit should have been called")
 	})
 
 	t.Run("ValidConfigFile", func(t *testing.T) {
@@ -91,9 +91,9 @@ package: "main"
 output: "output.bin"
 `
 		// Check LoadConfig behavior
-		loader := &ConfigLoader{file.NewFileReader(strings.NewReader(yamlContent))}
+		loader := &Loader{file.NewReader(strings.NewReader(yamlContent))}
 		cfg, err := loader.LoadConfig()
-		assert.NoError(t, err, "Failed to load config")
+		require.NoError(t, err, "Failed to load config")
 		assert.Equal(t, "-v", cfg.Args, "Expected args to be '-v'")
 		assert.Equal(t, "run", string(cfg.Command), "Expected command to be 'run'")
 		assert.True(t, cfg.Debug, "Expected debug to be true")
@@ -122,13 +122,12 @@ imports:
 `)
 		tmpFile := "./test-yml"
 		defer os.Remove(tmpFile) // Clean up the temporary file
-		if err := os.WriteFile(tmpFile, yamlData, 0644); err != nil {
-			t.Fatal(err)
-		}
+		err := os.WriteFile(tmpFile, yamlData, 0o600)
+		require.NoError(t, err)
 
-		loader := NewConfigLoader(tmpFile)
+		loader := NewLoader(tmpFile)
 		cfg, err := loader.LoadConfig()
-		assert.NoError(t, err, "Failed to load config")
+		require.NoError(t, err, "Failed to load config")
 		assert.Equal(t, "run", string(cfg.Command), "Expected command to be 'run'")
 		assert.Equal(t, "./tmp", cfg.Directory, "Expected directory to be './tmp'")
 		assert.True(t, cfg.Debug, "Expected debug to be true")
@@ -152,10 +151,10 @@ func TestApplyFlags(t *testing.T) {
 	}
 	// Set up a test case for flags
 	t.Run("FlagParsing", func(t *testing.T) {
-
 		// Create an empty config struct to apply flags
 		cfg := Config{}
-		ApplyFlags(&cfg)
+		err := ApplyFlags(&cfg)
+		require.NoError(t, err)
 
 		// Validate that the flags are correctly applied
 		assert.Equal(t, "test", string(cfg.Command), "Expected command to be 'test'")
@@ -173,23 +172,24 @@ func TestStringArray(t *testing.T) {
 	assert.Equal(t, "a,b,c", sa.String(), "Expected string representation to be 'a,b,c'")
 
 	err := sa.Set("d,e,f")
-	assert.NoError(t, err, "Expected no error when setting string array")
+	require.NoError(t, err, "Expected no error when setting string array")
 	assert.Equal(t, stringArray{"a", "b", "c", "d", "e", "f"}, sa, "Expected string array to be 'd,e,f'")
 
 	sa = stringArray{}
-	_ = sa.Set("d,e,f")
+	err = sa.Set("d,e,f")
+	require.NoError(t, err, "Expected no error when setting string array")
 	assert.Equal(t, stringArray{"d", "e", "f"}, sa, "Expected string array to be 'd,e,f'")
 }
 
-func TestNewConfigLoaderBuffer(t *testing.T) {
+func TestNewLoaderBuffer(t *testing.T) {
 	tests := []struct {
-		name string
-		data string
+		name   string
+		data   string
 		config Config
 	}{
 		{
-			name: "EmptyConfig",
-			data: "",
+			name:   "EmptyConfig",
+			data:   "",
 			config: Config{},
 		},
 		{
@@ -203,22 +203,22 @@ package: "main"
 mainfunc: true
 output: "out.go"`,
 			config: Config{
-				Command: "run",
+				Command:   "run",
 				Directory: "./tmp",
-				Args: "-v",
-				Debug: true,
-				Package: "main",
-				MainFunc: true,
-				Output: "out.go",
+				Args:      "-v",
+				Debug:     true,
+				Package:   "main",
+				MainFunc:  true,
+				Output:    "out.go",
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			loader := NewConfigLoaderBuffer(tt.data)
+			loader := NewLoaderBuffer(tt.data)
 			cfg, err := loader.LoadConfig()
-			assert.NoError(t, err, "Failed to load config")
+			require.NoError(t, err, "Failed to load config")
 			assert.Equal(t, tt.config, *cfg, "Expected config to match")
 		})
 	}
