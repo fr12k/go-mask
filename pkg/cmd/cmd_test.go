@@ -9,6 +9,7 @@ import (
 
 	"github.com/fr12k/go-mask/pkg/config"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewCommand(t *testing.T) {
@@ -129,6 +130,7 @@ func TestListFilesWithSuffix(t *testing.T) {
 			excludeSuffix: ".log",
 			expectedFiles: []string{},
 			setup: func(t *testing.T) (string, func()) {
+				t.Helper()
 				tempDir := t.TempDir()
 				return tempDir, func() { os.RemoveAll(tempDir) }
 			},
@@ -139,11 +141,12 @@ func TestListFilesWithSuffix(t *testing.T) {
 			excludeSuffix: ".log",
 			expectedFiles: []string{"file1.txt", "file2.txt"},
 			setup: func(t *testing.T) (string, func()) {
+				t.Helper()
 				// Create a temporary directory with files
 				tempDir := t.TempDir()
-				_ = os.WriteFile(filepath.Join(tempDir, "file1.txt"), []byte("content"), 0644)
-				_ = os.WriteFile(filepath.Join(tempDir, "file2.txt"), []byte("content"), 0644)
-				_ = os.WriteFile(filepath.Join(tempDir, "file3.log"), []byte("content"), 0644)
+				WriteTestFile(t, tempDir, "file1.txt", "content")
+				WriteTestFile(t, tempDir, "file2.txt", "content")
+				WriteTestFile(t, tempDir, "file3.log", "content")
 				return tempDir, func() { os.RemoveAll(tempDir) }
 			},
 		},
@@ -152,7 +155,7 @@ func TestListFilesWithSuffix(t *testing.T) {
 			suffix:        ".txt",
 			excludeSuffix: ".log",
 			expectedFiles: nil,
-			setup: func(t *testing.T) (string, func()) {
+			setup: func(_ *testing.T) (string, func()) {
 				return "invalidDir", func() {}
 			},
 			expectedErrMsg: "no such file or directory",
@@ -183,8 +186,7 @@ func TestListFilesWithSuffix(t *testing.T) {
 	}
 }
 
-
-//test utility
+// test utility
 
 type MockCommand struct {
 	command func(name string, arg ...string) *exec.Cmd
@@ -192,4 +194,10 @@ type MockCommand struct {
 
 func (m MockCommand) Command(name string, arg ...string) *exec.Cmd {
 	return m.command(name, arg...)
+}
+
+func WriteTestFile(t *testing.T, dir, file, content string) {
+	t.Helper()
+	err := os.WriteFile(filepath.Join(dir, file), []byte(content), 0o600)
+	require.NoError(t, err)
 }

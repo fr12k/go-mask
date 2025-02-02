@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	// "bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -16,8 +15,8 @@ import (
 
 type (
 	GoMask struct {
-		loader  *config.ConfigLoader
-		reader  func(cfg *config.Config) *code.CodeReader
+		loader  *config.Loader
+		reader  func(cfg *config.Config) *code.Reader
 		writer  func(cfg *config.Config) *file.File
 		command *cmd.Command
 	}
@@ -32,20 +31,20 @@ type (
 
 func WithConfig(cfg *config.Config) Option {
 	return func(g *GoMask) {
-		//ignore error because we are sure that the config is valid
+		//nolint:errcheck // ignore error because we are sure that the config is valid
 		b, _ := yaml.Marshal(cfg)
-		g.loader = config.NewConfigLoaderBuffer(string(b))
+		g.loader = config.NewLoaderBuffer(string(b))
 	}
 }
 
 func NewGoMask(opts ...Option) *GoMask {
 	goMask := &GoMask{
-		loader: config.NewConfigLoader(".go-mask.yml"),
-		reader: func(cfg *config.Config) *code.CodeReader {
-			return code.NewCodeReader(strings.NewReader(cfg.Code))
+		loader: config.NewLoader(".go-mask.yml"),
+		reader: func(cfg *config.Config) *code.Reader {
+			return code.NewReader(strings.NewReader(cfg.Code))
 		},
 		writer: func(cfg *config.Config) *file.File {
-			return file.NewFileWriter(filepath.Join(cfg.Directory, cfg.SaveAs()))
+			return file.NewWriter(filepath.Join(cfg.Directory, cfg.SaveAs()))
 		},
 		command: cmd.NewCommand(),
 	}
@@ -65,7 +64,11 @@ func (g *GoMask) Run() (Result, error) {
 	}
 
 	// Parse flags from config
-	config.ApplyFlags(cfg)
+	err = config.ApplyFlags(cfg)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error generating parsing flags from commandline: %v\n", err)
+		return Result{}, err
+	}
 
 	// Read the input code
 	reader := g.reader(cfg)
