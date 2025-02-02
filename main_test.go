@@ -25,18 +25,15 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 	fmt.Println("-> Running...")
-	err := os.MkdirAll(".coverdata", 0755)
+	err := os.MkdirAll(".coverdata", 0o600)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error creating directory: %s", err)
 		os.Exit(1)
 	}
 	// Running the
 	result := m.Run()
-	fmt.Println("-> Getting done...")
-	//go tool covdata textfmt -i=coverdata/ -o system.out
-	// os.Remove(appName)
-
-	cmd := exec.Command("go", "tool", "covdata", "textfmt", "-i=.coverdata/", "-o", "system.out")
+	fmt.Println("-> Getting coverage...")
+	cmd := exec.Command("go", "tool", "covdata", "textfmt", "-i=.coverdata/,./.coverdata/unit", "-o", "coverage.txt")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()
@@ -45,23 +42,6 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	var buf bytes.Buffer
-	//gocovmerge  system.out coverage.out > merged.out
-	cmd = exec.Command("gocovmerge", "system.out", "coverage.txt")
-	cmd.Stdout = &buf
-	cmd.Stderr = os.Stderr
-	err = cmd.Run()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error running command: %s", err)
-		os.Exit(1)
-	}
-	err = os.WriteFile("coverage.txt", buf.Bytes(), 0644)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error writing file: %s", err)
-		os.Exit(1)
-	}
-	os.Remove(appName)
-	os.Remove("system.out")
 	os.RemoveAll(".coverdata")
 	os.Exit(result)
 }
