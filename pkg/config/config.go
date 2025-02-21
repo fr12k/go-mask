@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/fr12k/go-mask/pkg/file"
+	"github.com/fr12k/go-file"
 
 	"gopkg.in/yaml.v3"
 )
@@ -69,7 +69,7 @@ func NewLoaderBuffer(content string) *Loader {
 }
 
 func NewLoader(filename string) *Loader {
-	return &Loader{file.NewFile(filename)}
+	return &Loader{file.New(filename)}
 }
 
 func (c *Loader) LoadConfig() (*Config, error) {

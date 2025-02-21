@@ -10,10 +10,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/fr12k/go-file"
 	"github.com/fr12k/go-mask/pkg/cmd"
 	"github.com/fr12k/go-mask/pkg/code"
 	"github.com/fr12k/go-mask/pkg/config"
-	"github.com/fr12k/go-mask/pkg/file"
+
 	"github.com/stretchr/testify/assert"
 )
 

@@ -6,10 +6,11 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/fr12k/go-file"
 	"github.com/fr12k/go-mask/pkg/cmd"
 	"github.com/fr12k/go-mask/pkg/code"
 	"github.com/fr12k/go-mask/pkg/config"
-	"github.com/fr12k/go-mask/pkg/file"
+
 	"gopkg.in/yaml.v3"
 )
 

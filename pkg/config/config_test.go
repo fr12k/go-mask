@@ -6,7 +6,7 @@ import (
 	"testing"
 	"testing/iotest"
 
-	"github.com/fr12k/go-mask/pkg/file"
+	"github.com/fr12k/go-file"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -71,9 +71,9 @@ linters-settings:
       - io.Copy(*bytes.Buffer)
       - io.Copy(os.Stdout)
 
-  govet:
-    disable:
-      # - fieldalignment # I'm ok to waste some bytes
+  # govet:
+    # disable: 
+    #   - fieldalignment # I'm ok to waste some bytes
 
   nakedret:
     # No naked returns, ever.
