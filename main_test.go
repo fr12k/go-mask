@@ -65,5 +65,5 @@ func TestCallMainError(t *testing.T) {
 	cmd.Stderr = &buf
 	err := cmd.Run()
 	assert.Error(t, err)
-	assert.Equal(t, "Error executing command: exit status 1\n.go-mask/go-mask_test.go:1:1: expected 'package', found fmt\nexit status 1\n", buf.String())
+	assert.Equal(t, "Error executing command: exit status 1\nFAIL\tcommand-line-arguments [setup failed]\nFAIL\n# command-line-arguments\n.go-mask/go-mask_test.go:1:1: expected 'package', found fmt\nexit status 1\n", buf.String())
 }
