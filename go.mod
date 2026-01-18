@@ -1,6 +1,6 @@
 module github.com/fr12k/go-mask
 
-go 1.25.0
+go 1.25.5
 
 require (
 	github.com/fr12k/go-file v0.0.3
