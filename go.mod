@@ -1,9 +1,9 @@
 module github.com/fr12k/go-mask
 
-go 1.25.5
+go 1.26.0
 
 require (
-	github.com/fr12k/go-file v0.0.3
+	github.com/fr12k/go-file v0.0.4
 	github.com/stretchr/testify v1.11.1
 	gopkg.in/yaml.v3 v3.0.1
 )
