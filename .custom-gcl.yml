@@ -1,5 +1,10 @@
 # This has to be >= v1.57.0 for module plugin system support.
-version: v1.63.4
+# Upgraded to v2.10.1: the first v2 release containing the fix for
+# golangci-lint issue #6375 (buildssa panic: "interface conversion:
+# interface {} is nil, not *ctrlflow.CFGs"), triggered by the nilaway
+# plugin. The fix (PR #6376, making markDepsForAnalyzingSource recursive)
+# was never backported to the v1.x line.
+version: v2.10.1
 destination: ./build/
 name: custom-gcl
 plugins:
