@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -29,7 +30,8 @@ type (
 )
 
 func (m ExecCommand) Command(name string, arg ...string) *exec.Cmd {
-	return exec.Command(name, arg...)
+	//nolint:gosec // name is a trusted command name
+	return exec.CommandContext(context.Background(), name, arg...)
 }
 
 func NewCommand() *Command {

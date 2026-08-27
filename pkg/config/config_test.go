@@ -121,7 +121,7 @@ imports:
   - "fmt"
 `)
 		tmpFile := "./test-yml"
-		defer os.Remove(tmpFile) // Clean up the temporary file
+		defer func() { _ = os.Remove(tmpFile) }() //nolint:errcheck // Clean up the temporary file
 		err := os.WriteFile(tmpFile, yamlData, 0o600)
 		require.NoError(t, err)
 

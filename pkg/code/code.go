@@ -49,11 +49,11 @@ func (c *Reader) GenerateGoCode(cfg *config.Config) (string, error) {
 	}
 	var out strings.Builder
 	if cfg.Package != "" {
-		out.WriteString(fmt.Sprintf("package %s\n\n", cfg.Package))
+		fmt.Fprintf(&out, "package %s\n\n", cfg.Package)
 	}
 
 	for _, pkg := range cfg.Imports {
-		out.WriteString(fmt.Sprintf("import %q\n", strings.TrimSpace(pkg)))
+		fmt.Fprintf(&out, "import %q\n", strings.TrimSpace(pkg))
 	}
 	if len(cfg.Imports) > 0 {
 		out.WriteString("\n")

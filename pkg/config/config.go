@@ -73,7 +73,7 @@ func NewLoader(filename string) *Loader {
 }
 
 func (c *Loader) LoadConfig() (*Config, error) {
-	defer c.File.Close()
+	defer func() { _ = c.File.Close() }() //nolint:errcheck // cleanup
 	exist, err := c.File.Exists()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error checking file existence: %v", err)

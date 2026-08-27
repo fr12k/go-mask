@@ -27,6 +27,7 @@ type File struct {
 
 func readerFunc(filePath string) func() (io.Reader, error) {
 	return func() (io.Reader, error) {
+		//nolint:gosec // filePath is trusted
 		file, err := os.Open(filePath)
 		return file, err
 	}
@@ -62,13 +63,14 @@ func writerFunc(filePath string) func() func() (*Writer, error) {
 	return func() func() (*Writer, error) {
 		// Ensure the directory exists
 		dir := filepath.Dir(filePath)
-		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+		if err := os.MkdirAll(dir, 0o750); err != nil {
 			return func() (*Writer, error) {
 				return nil, fmt.Errorf("failed to create directory %q: %w", dir, err)
 			}
 		}
 		fileName := filepath.Base(filePath)
 		return func() (*Writer, error) {
+			//nolint:gosec // filePath is trusted
 			file, err := os.Create(filePath)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create file: %w", err)
