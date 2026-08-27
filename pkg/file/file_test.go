@@ -108,7 +108,7 @@ func TestNewFile(t *testing.T) {
 	filePath := "./testFile.txt"
 
 	// Clean up the file after the test
-	defer os.Remove(filePath)
+	defer func() { _ = os.Remove(filePath) }() //nolint:errcheck // cleanup
 
 	// Create a new file
 	file := NewFile(filePath)
@@ -125,7 +125,7 @@ func TestNewWriter(t *testing.T) {
 
 	t.Run("CreatesWriterWhenDirectoryDoesNotExist", func(t *testing.T) {
 		// Clean up after the tests
-		defer os.RemoveAll(baseDir)
+		defer func() { _ = os.RemoveAll(baseDir) }() //nolint:errcheck // cleanup
 		file := NewWriter(testFilePath)
 		writer, err := file.writer()()
 		require.NoError(t, err)
@@ -154,9 +154,9 @@ func TestNewWriter(t *testing.T) {
 
 	t.Run("CreatesWriterWhenDirectoryExists", func(t *testing.T) {
 		// Clean up after the tests
-		defer os.RemoveAll(baseDir)
+		defer func() { _ = os.RemoveAll(baseDir) }() //nolint:errcheck // cleanup
 		// Ensure the directory exists
-		err := os.MkdirAll(filepath.Dir(testFilePath), os.ModePerm)
+		err := os.MkdirAll(filepath.Dir(testFilePath), 0o750)
 		require.NoError(t, err)
 
 		file := NewWriter(testFilePath)
@@ -173,14 +173,14 @@ func TestNewWriter(t *testing.T) {
 
 	t.Run("FailsToCreateDirectory", func(t *testing.T) {
 		// Clean up after the tests
-		defer os.RemoveAll(baseDir)
+		defer func() { _ = os.RemoveAll(baseDir) }() //nolint:errcheck // cleanup
 		// Create a file at the directory path to cause MkdirAll to fail
-		err := os.MkdirAll(baseDir, os.ModePerm)
+		err := os.MkdirAll(baseDir, 0o750)
 		require.NoError(t, err)
 		dir := filepath.Join(baseDir, "logs")
 		err = os.WriteFile(dir, []byte{}, 0o600) // Create a file where the directory should be
 		require.NoError(t, err)
-		defer os.Remove(dir)
+		defer func() { _ = os.Remove(dir) }() //nolint:errcheck // cleanup
 
 		file := NewWriter(dir + "/")
 		_, err = file.writer()()
@@ -190,17 +190,15 @@ func TestNewWriter(t *testing.T) {
 
 	t.Run("FailsToCreateFile", func(t *testing.T) {
 		// Create a temporary directory
-		baseDir, err := os.MkdirTemp("", "readonly-test")
-		assert.NoError(t, err)
-		defer os.RemoveAll(baseDir)
+		baseDir := t.TempDir()
 
 		testFilePath := filepath.Join(baseDir, "output.log")
 
 		file := NewWriter(testFilePath)
 		fnc := file.writer()
 
-		os.RemoveAll(baseDir)
-		_, err = fnc()
+		_ = os.RemoveAll(baseDir) //nolint:errcheck // cleanup
+		_, err := fnc()
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to create file")
 
@@ -216,7 +214,7 @@ func TestNewWriterBuffer(t *testing.T) {
 	testFilePath := filepath.Join(baseDir, "output.log")
 
 	// Clean up after the tests
-	defer os.RemoveAll(baseDir)
+	defer func() { _ = os.RemoveAll(baseDir) }() //nolint:errcheck // cleanup
 	var buf bytes.Buffer
 	file := NewWriterBuffer(&buf, testFilePath)
 	writer, err := file.writer()()
@@ -255,7 +253,7 @@ func NewMockReader(data string) *MockReader {
 func createFile(t *testing.T, cnt string) (name string, clean func()) {
 	t.Helper()
 	// Create a temporary file with test content
-	tmpFile, err := os.CreateTemp("", "testfile")
+	tmpFile, err := os.CreateTemp(t.TempDir(), "testfile")
 	require.NoError(t, err)
 
 	_, err = tmpFile.WriteString(cnt)
@@ -263,6 +261,6 @@ func createFile(t *testing.T, cnt string) (name string, clean func()) {
 
 	require.NoError(t, tmpFile.Close())
 	return tmpFile.Name(), func() {
-		os.Remove(tmpFile.Name())
+		_ = os.Remove(tmpFile.Name()) //nolint:errcheck,gosec // cleanup, test file path
 	}
 }

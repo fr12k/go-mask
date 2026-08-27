@@ -4,6 +4,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -17,7 +18,7 @@ var appName = "go-mask2"
 func TestMain(m *testing.M) {
 	fmt.Println("-> Building...")
 
-	build := exec.Command("go", "build", "-cover", "-o", appName)
+	build := exec.CommandContext(context.Background(), "go", "build", "-cover", "-o", appName)
 	build.Stdout = os.Stdout
 	build.Stderr = os.Stderr
 	if err := build.Run(); err != nil {
@@ -33,7 +34,7 @@ func TestMain(m *testing.M) {
 	// Running the
 	result := m.Run()
 	fmt.Println("-> Getting coverage...")
-	cmd := exec.Command("go", "tool", "covdata", "textfmt", "-i=.coverdata/,./.coverdata/unit", "-o", "coverage.txt")
+	cmd := exec.CommandContext(context.Background(), "go", "tool", "covdata", "textfmt", "-i=.coverdata/,./.coverdata/unit", "-o", "coverage.txt")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()
@@ -42,13 +43,13 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	os.RemoveAll(".coverdata")
+	_ = os.RemoveAll(".coverdata") //nolint:errcheck // cleanup
 	os.Exit(result)
 }
 
 func TestCallMain(t *testing.T) {
 	var buf bytes.Buffer
-	cmd := exec.Command("./"+appName, "--debug", "-c", "fmt.Println(\"Hello, World!\")")
+	cmd := exec.CommandContext(context.Background(), "./"+appName, "--debug", "-c", "fmt.Println(\"Hello, World!\")")
 	cmd.Env = append(os.Environ(), "GOCOVERDIR=.coverdata")
 	cmd.Stdout = &buf
 	cmd.Stderr = &buf
@@ -59,7 +60,7 @@ func TestCallMain(t *testing.T) {
 
 func TestCallMainError(t *testing.T) {
 	var buf bytes.Buffer
-	cmd := exec.Command("./"+appName, "-c", "fmt.Println(\"Hello, World!\")")
+	cmd := exec.CommandContext(context.Background(), "./"+appName, "-c", "fmt.Println(\"Hello, World!\")")
 	cmd.Env = append(os.Environ(), "GOCOVERDIR=.coverdata")
 	cmd.Stdout = &buf
 	cmd.Stderr = &buf

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -93,9 +94,9 @@ func TestExecuteCommand(t *testing.T) {
 					assert.Equal(t, "-c go run arg1 arg2 testfile.go", strings.Join(args, " "))
 				}
 				if tt.cfg.Command == "error" {
-					return exec.Command("")
+					return exec.CommandContext(context.Background(), "")
 				}
-				return exec.Command("echo")
+				return exec.CommandContext(context.Background(), "echo")
 			}
 			// Execute the command
 			cmd := Command{
@@ -132,7 +133,7 @@ func TestListFilesWithSuffix(t *testing.T) {
 			setup: func(t *testing.T) (string, func()) {
 				t.Helper()
 				tempDir := t.TempDir()
-				return tempDir, func() { os.RemoveAll(tempDir) }
+				return tempDir, func() { _ = os.RemoveAll(tempDir) } //nolint:errcheck // test cleanup
 			},
 		},
 		{
@@ -147,7 +148,7 @@ func TestListFilesWithSuffix(t *testing.T) {
 				WriteTestFile(t, tempDir, "file1.txt", "content")
 				WriteTestFile(t, tempDir, "file2.txt", "content")
 				WriteTestFile(t, tempDir, "file3.log", "content")
-				return tempDir, func() { os.RemoveAll(tempDir) }
+				return tempDir, func() { _ = os.RemoveAll(tempDir) } //nolint:errcheck // test cleanup
 			},
 		},
 		{

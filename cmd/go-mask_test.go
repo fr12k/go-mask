@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -209,7 +210,7 @@ func NewMockCommand() *cmd.Command {
 	return &cmd.Command{
 		CommandInterface: MockCommand{
 			command: func(_ string, _ ...string) *exec.Cmd {
-				return exec.Command("echo")
+				return exec.CommandContext(context.Background(), "echo")
 			},
 		},
 	}
@@ -219,9 +220,9 @@ func NewMockCommandWithError(err error) *cmd.Command {
 	return &cmd.Command{
 		CommandInterface: MockCommand{
 			command: func(_ string, _ ...string) *exec.Cmd {
-				cmd := exec.Command("echo")
-				cmd.Err = err
-				return cmd
+				c := exec.CommandContext(context.Background(), "echo")
+				c.Err = err
+				return c
 			},
 		},
 	}

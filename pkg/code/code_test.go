@@ -31,7 +31,7 @@ func TestReadCode_ReadFromStdin(t *testing.T) {
 
 	_, err = w.WriteString(mockInput)
 	assert.NoError(t, err)
-	w.Close()
+	_ = w.Close() //nolint:errcheck // test cleanup
 
 	// Read from stdin
 	reader := NewReader(nil)
@@ -47,7 +47,7 @@ func TestReadCode_ReadFromStdinWithError(t *testing.T) {
 	r, _, err := os.Pipe()
 	require.NoError(t, err)
 	os.Stdin = r
-	r.Close() // Immediately close the read pipe to cause an error
+	_ = r.Close() //nolint:errcheck // Immediately close the read pipe to cause an error
 
 	reader := NewReader(nil)
 	_, err = reader.ReadCode()
