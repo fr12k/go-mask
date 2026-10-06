@@ -4,7 +4,13 @@
 # interface {} is nil, not *ctrlflow.CFGs"), triggered by the nilaway
 # plugin. The fix (PR #6376, making markDepsForAnalyzingSource recursive)
 # was never backported to the v1.x line.
-version: v2.10.1
+# Upgraded to v2.13.1: the first release pulling in honnef.co/go/tools
+# v0.8.0 (Staticcheck 2026.2), which adds support for Go 1.27 language
+# features (generic methods, direct references to embedded fields in
+# struct initializers). v0.7.0 (Staticcheck 2026.1) used by v2.10.x
+# panics on those constructs with "unexpected expr: *ast.KeyValueExpr"
+# inside buildir/compLit, which broke the linter step.
+version: v2.13.1
 destination: ./build/
 name: custom-gcl
 plugins:
