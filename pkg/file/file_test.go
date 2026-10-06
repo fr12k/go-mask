@@ -261,6 +261,6 @@ func createFile(t *testing.T, cnt string) (name string, clean func()) {
 
 	require.NoError(t, tmpFile.Close())
 	return tmpFile.Name(), func() {
-		_ = os.Remove(tmpFile.Name()) //nolint:errcheck,gosec // cleanup, test file path
+		_ = os.Remove(tmpFile.Name()) //nolint:errcheck // cleanup, test file path
 	}
 }
